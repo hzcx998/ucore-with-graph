@@ -1,0 +1,223 @@
+/* KGC-kernel graph core 内核图形核心 */
+
+/* 系统内核 */
+
+#include <input/keycode.h>
+#include <kgceven.h>
+#include <button.h>
+
+/* 记录鼠标上次状态 */
+struct KGC_MouseRecord {
+    uint8_t left;
+    uint8_t right;
+    uint8_t middle;
+};
+
+#define DEBUG_EVEN 0
+
+static struct KGC_MouseRecord mouseRecord = {0,0,0};
+
+/**
+ * KGC_EvenKeyboardKey - 对键盘键值的处理
+ * 
+ */
+void KGC_EvenKeyboardKey(int key, KGC_KeyboardEven_t *even)
+{
+    /* 默认是没有 */
+    even->type = KGC_NOEVENT;
+    even->state = 0;
+
+    /* 按键类型 */
+    if (key & 0x80) {
+        even->type = KGC_KEY_UP;
+        even->state = KGC_PRESSED;
+    } else {
+        even->type = KGC_KEY_DOWN;
+        even->state = KGC_RELEASED;
+    }
+    /* 检测修饰符 */
+    if (key & IKEY_FLAG_SHIFT_L) {
+        even->keycode.modify |= KGC_KMOD_LSHIFT;
+    }
+    if (key & IKEY_FLAG_SHIFT_R) {
+        even->keycode.modify |= KGC_KMOD_RSHIFT;
+    }
+    if (key & IKEY_FLAG_CTRL_L) {
+        even->keycode.modify |= KGC_KMOD_LCTRL;
+    }
+    if (key & IKEY_FLAG_CTRL_R) {
+        even->keycode.modify |= KGC_KMOD_RCTRL;
+    }
+    if (key & IKEY_FLAG_ALT_L) {
+        even->keycode.modify |= KGC_KMOD_LALT;
+    }
+    if (key & IKEY_FLAG_ALT_R) {
+        even->keycode.modify |= KGC_KMOD_RALT;
+    }
+    if (key & IKEY_FLAG_PAD) {
+        even->keycode.modify |= KGC_KMOD_PAD;
+    }
+    
+    if (key & IKEY_FLAG_NUM) {
+        even->keycode.modify |= KGC_KMOD_NUM;
+    }
+    if (key & IKEY_FLAG_CAPS) {
+        even->keycode.modify |= KGC_KMOD_CAPS;
+    }
+
+    /* 除去修饰符后原来的键值 */
+    even->keycode.scanCode = key;
+    
+    /* 获取按键码, clear break code bit. */
+    even->keycode.code =  key & (~0x80);
+    
+#if DEBUG_EVEN == 1  
+    cprintf("keyboard even: type-%d, scancode-%x keycode-%x|%c modify-%x\n",
+        even->type,even->keycode.scanCode,even->keycode.code,even->keycode.code, even->keycode.modify);
+#endif  /* DEBUG_KEYBOARD */
+    
+}   
+
+/**
+ * KGC_EvenMouseMotion - 对鼠标移动的处理
+ * 
+ */
+void KGC_EvenMouseMotion(int32_t x, int32_t y, int32_t z, KGC_MouseMotionEven_t *even)
+{
+    even->type = KGC_NOEVENT;
+    even->x = 0;
+    even->y = 0;
+        
+    /* 如果有一个是变化的，那么就说明鼠标移动了 */
+    if (x || y) {
+        even->type = KGC_MOUSE_MOTION;
+        even->x = x;
+        even->y = y;
+    }
+}
+
+/**
+ * KGC_EvenMouseButton - 对鼠标按键的处理
+ * 
+ */
+void KGC_EvenMouseButton(uint8_t button, KGC_MouseButtonEven_t *even)
+{   
+    /* 默认是没有 */
+    even->type = KGC_NOEVENT;
+    even->state = KGC_PRESSED;
+
+    /*
+    如果左键按下，那么就是down，left
+    如果此时右键也按下，那么就是down，left，right，
+    如果此时左键弹起，那么就是up，left，down，right
+    ！鼠标按钮的变化，需要根据上一个按钮状态来判断！
+    */
+
+    /* 对是否按压做判断 */
+    if ((button & 0x01) || (button & 0x02) || (button & 0x04)) {
+        /* 只要有一个按扭，就算是按压 */
+        even->state = KGC_PRESSED;
+    } else {
+        even->state = KGC_RELEASED;
+    }
+
+    /* 左键按下 */
+    if (button & 0x01) {
+        /* 如果没有按下，才可以按下 */
+        if (!mouseRecord.left) {
+            even->type = KGC_MOUSE_BUTTON_DOWN;
+            /* 按下的时候，可以是多个按键，所以用或 */
+            even->button |= KGC_MOUSE_LEFT;   /* 左键 */
+            mouseRecord.left = 1;
+            //printk("left down>");
+        }
+    } else {
+        /* 如果上次是按下，这次又没有按下，就是弹起 */
+        if (mouseRecord.left) {
+            even->type = KGC_MOUSE_BUTTON_UP;
+            /* 弹起的时候只检测1个按键 */
+            even->button = KGC_MOUSE_LEFT;   /* 左键 */
+
+            mouseRecord.left = 0; 
+            //printk("left up>");
+            
+            /* 打印事件状态 */
+            //printk("type:%x state:%x button:%x\n", even->type, even->state, even->button);  
+            return; /* 如果有按键弹起就直接返回，不再往后面检测 */         
+        }
+    } 
+    /* 右键按下 */
+    if ((button & 0x02)) {
+        /* 如果没有按下，才可以按下 */
+        if (!mouseRecord.right) {
+            even->type = KGC_MOUSE_BUTTON_DOWN;
+            /* 按下的时候，可以是多个按键，所以用或 */
+            
+            even->button |= KGC_MOUSE_RIGHT;   /* 右键 */
+            mouseRecord.right = 1;   
+            //printk("right down>");
+        
+        }
+    } else {
+        /* 如果上次是按下，这次又没有按下，就是弹起 */
+        if (mouseRecord.right) {
+            even->type = KGC_MOUSE_BUTTON_UP;
+            /* 弹起的时候只检测1个按键 */
+            even->button = KGC_MOUSE_RIGHT;   /* 右键 */
+        
+            mouseRecord.right = 0;
+            //printk("right up>");
+        
+            /* 打印事件状态 */
+            //printk("type:%x state:%x button:%x\n", even->type, even->state, even->button);      
+            return;   /* 如果有按键弹起就直接返回，不再往后面检测 */         
+           
+        }
+    } 
+    /* 中键按下 */
+    if ((button & 0x04)) {
+        /* 如果没有按下，才可以按下 */
+        if (!mouseRecord.middle) {
+            even->type = KGC_MOUSE_BUTTON_DOWN;
+            /* 按下的时候，可以是多个按键，所以用或 */
+            
+            even->button |= KGC_MOUSE_MIDDLE;   /* 中键 */
+            mouseRecord.middle = 1; 
+            //printk("mid down>");
+        
+        }
+    } else {
+        /* 如果上次是按下，这次又没有按下，就是弹起 */
+        if (mouseRecord.middle) {
+            even->type = KGC_MOUSE_BUTTON_UP;
+            /* 弹起的时候只检测1个按键 */
+            even->button = KGC_MOUSE_MIDDLE;   /* 中键 */
+        
+            mouseRecord.middle = 0;
+            //printk("md up>");
+        
+            /* 打印事件状态 */
+            //printk("type:%x state:%x button:%x\n", even->type, even->state, even->button);      
+            return;   /* 如果有按键弹起就直接返回，不再往后面检测 */         
+           
+        }
+    } 
+    /* 打印事件状态 */
+    //printk("type:%x state:%x button:%x\n", even->type, even->state, even->button);
+}   
+
+
+/**
+ * KGC_EvenTimer - 事件事件分析
+ * 
+ */
+void KGC_EvenTimer(int32_t ticks, KGC_TimerEven_t *even)
+{
+    even->type = KGC_NOEVENT;
+    even->ticks = 0;    
+    /* 如果有一个是变化的，那么就说明鼠标移动了 */
+    if (ticks) {
+        even->type = KGC_TIMER_EVEN;
+        even->ticks = ticks;
+    }
+}
