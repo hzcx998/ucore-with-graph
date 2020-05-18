@@ -337,7 +337,7 @@ monitor: $(UCOREIMG) $(SWAPING) $(SFSIMG)
 	$(V)$(QEMU) -monitor stdio $(QEMUOPTS) -serial null
 
 bochs:
-	bochsdbg -q -f tools/bochsrc.conf
+	bochs -q -f tools/bochsrc.conf
 
 TERMINAL := gnome-terminal
 

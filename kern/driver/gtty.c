@@ -390,7 +390,7 @@ int GttyOpen()
     Gtty_t *gtty = (Gtty_t *)&gtty_object;
 
     /* 打开一个窗口 */
-    gtty->window = KGC_WindowCreate("gtty", "gtty", 0, 0, 0, 
+    gtty->window = KGC_WindowCreate("gtty", "gtty", 0, 50, 100, 
         WIN_WIDTH, WIN_HEIGHT, NULL);
     if (gtty->window == NULL) {
         cprintf("open gtty device failed!\n");

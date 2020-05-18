@@ -252,7 +252,7 @@ trap_dispatch(struct trapframe *tf) {
         //break;
     case IRQ_OFFSET + IRQ_KBD:
         c = cons_getc();
-        cprintf("kbd [%03d] %c\n", c, c);
+        //cprintf("kbd [%03d] %c\n", c, c);
         {
           /* extern void dev_stdin_write(char c);
           dev_stdin_write(c);*/
@@ -262,32 +262,22 @@ trap_dispatch(struct trapframe *tf) {
           }
             
         }
-        /* 主芯片 */
-        outb(IO_PIC1,  IO_EIO);
         break;
     //LAB1 CHALLENGE 1 : YOUR CODE you should modify below codes.
     case T_SWITCH_TOU:
     case T_SWITCH_TOK:
         panic("T_SWITCH_** ??\n");
         break;
+    case IRQ_OFFSET + IRQ_MOUSE:
+        MouseHnadler();
+        /* do nothing */
+        break;
     case IRQ_OFFSET + IRQ_IDE1:
     case IRQ_OFFSET + IRQ_IDE2:
-        /* do nothing */
-        break;
-    case IRQ_OFFSET + IRQ_MOUSE:
-        cprintf("mouse handler\n");
-        MouseHnadler();
-
-        if (IRQ_MOUSE >= 8) {
-            outb(IO_PIC2,  IO_EIO);
-        }
-        /* 主芯片 */
-        outb(IO_PIC1,  IO_EIO);
-
-
 
         /* do nothing */
         break;
+    
     default:
         print_trapframe(tf);
         if (current != NULL) {

@@ -407,7 +407,7 @@ int KGC_InitWindowContainer()
 
     /* 打开一个测试窗口任务 */
     //ThreadStart("window", 2, ThreadWindow, NULL);
-
+#if 0
     KGC_Window_t *win = KGC_WindowCreate(
         "test win", "hello ucore", 0, 100, 150, 480, 360, NULL);
 
@@ -433,7 +433,7 @@ int KGC_InitWindowContainer()
         );
         KGC_WindowRefresh(win, 0, 0, win->width, win->height);
     }
-
+#endif
 
     return 0;
 }

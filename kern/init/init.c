@@ -42,17 +42,10 @@ kern_init(void) {
  
     proc_init();                // init process table
     
-
-    intr_enable();              // enable irq interrupt
-
-    gui_init();                 // init gui
-    
-    while (1)
-    {
-        /* code */
-    }
     ide_init();                 // init ide devices
 
+    gui_init();                 // init gui
+ 
     swap_init();                // init swap
     fs_init();                  // init fs
     

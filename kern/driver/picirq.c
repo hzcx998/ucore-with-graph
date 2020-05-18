@@ -55,7 +55,7 @@ pic_init(void) {
     //         can be hardwired).
     //    a:  1 = Automatic EOI mode
     //    p:  0 = MCS-80/85 mode, 1 = intel x86 mode
-    outb(IO_PIC1 + 1, 0x01);    /* 不自动EOI，在中断处理完后在设置EOI */
+    outb(IO_PIC1 + 1, 0x03);    /* 不自动EOI，在中断处理完后在设置EOI */
 
     // Set up slave (8259A-2)
     outb(IO_PIC2, 0x11);    // ICW1
@@ -63,7 +63,7 @@ pic_init(void) {
     outb(IO_PIC2 + 1, IRQ_SLAVE);       // ICW3
     // NB Automatic EOI mode doesn't tend to work on the slave.
     // Linux source code says it's "to be investigated".
-    outb(IO_PIC2 + 1, 0x1);             // ICW4
+    outb(IO_PIC2 + 1, 0x3);             // ICW4
 
     // OCW3:  0ef01prs
     //   ef:  0x = NOP, 10 = clear specific mask, 11 = set specific mask
@@ -76,9 +76,6 @@ pic_init(void) {
     outb(IO_PIC2, 0x68);    // OCW3
     outb(IO_PIC2, 0x0a);    // OCW3
 #endif
-    outb(IO_PIC1 + 1, 0xFF);
-    outb(IO_PIC2 + 1, 0xFF);
-
     if (irq_mask != 0xFFFF) {
         pic_setmask(irq_mask);
     }

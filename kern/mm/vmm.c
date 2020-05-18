@@ -174,7 +174,7 @@ mm_set_brk(struct mm_struct *mm) {
     mm->brk_start = prev->vm_end + PGSIZE;
     mm->brk_start = PGALIGN(mm->brk_start); /* page align */
     mm->brk = mm->brk_start;
-    cprintf("brk : start: %x \n", mm->brk_start);
+    //cprintf("brk : start: %x \n", mm->brk_start);
 }
 
 /**
@@ -278,7 +278,7 @@ set_addr:
 the_end:
     /* 获取mm中的addr值 */    
     ret = mm->brk;
-    cprintf("return brk addr is %x\n", ret);
+    //cprintf("return brk addr is %x\n", ret);
     return ret;
 }
 

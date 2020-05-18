@@ -10,9 +10,7 @@
 void gui_init(){
     cprintf("init gui.\n");
     kbd_init();
-    
-    InitMouseDriver();
-    
+    //InitMouseDriver();
     
     /* init graph driver */
     initVesaDriver();

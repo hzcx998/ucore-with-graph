@@ -128,7 +128,7 @@ void start_application( char *filename )
     }
 
     /* 创建窗口 */
-    if (GUI_CreateWindow("infones", "infones", 0, 100, 100, 
+    if (GUI_CreateWindow("infones", "infones", 0, 400, 200, 
         NES_DISP_WIDTH, NES_DISP_HEIGHT + 40, NULL))
         return;
     /* 绘制提示信息 */
